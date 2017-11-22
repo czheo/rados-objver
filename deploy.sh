@@ -1,3 +1,5 @@
+#!/bin/bash
+
 restart_node() {
   host=$1
   echo "restarting $host"
@@ -14,6 +16,6 @@ restart_node node-1
 restart_node node-2
 restart_node node-3
 
-sleep 1
+sleep 3
 
 sudo ceph -s

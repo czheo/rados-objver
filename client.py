@@ -16,7 +16,8 @@ ioctx = cluster.open_ioctx(POOL)
 
 def get(name, ver = ""):
     ret, out = ioctx.execute(name, 'objver', 'get', ver)
-    if ret < 0: raise Exception 
+    if ret < 0:
+        raise Exception
     return out
 
 def put(name, path):
@@ -24,8 +25,10 @@ def put(name, path):
         return ioctx.execute(name, 'objver', 'put', f.read())
 
 def lsver(name):
+    """list version"""
     ret, out = ioctx.execute(name, 'objver', 'lsver', "")
-    if ret < 0: raise Exception 
+    if ret < 0:
+        raise Exception
     return out
 
 def main(args):
