@@ -8,10 +8,9 @@ restart_node() {
   ssh $host sudo mv libcls_objver.so /usr/lib/rados-classes/libcls_objver.so
   ssh $host sudo chown root /usr/lib/rados-classes/libcls_objver.so
   ssh $host sudo chgrp root /usr/lib/rados-classes/libcls_objver.so
-  ssh $host sudo systemctl restart ceph.target
+  ssh $host sudo systemctl restart ceph\*.service ceph\*.target
 }
 
-restart_node node-0
 restart_node node-1
 restart_node node-2
 restart_node node-3

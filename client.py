@@ -6,8 +6,8 @@ import json
 import argparse
 
 # init ceph
-CONFFILE = expanduser("~/my_cluster/ceph.conf")
-KEYFILE = expanduser("~/my_cluster/ceph.client.admin.keyring")
+CONFFILE = expanduser("./my_cluster/ceph.conf")
+KEYFILE = expanduser("./my_cluster/ceph.client.admin.keyring")
 POOL = "test"
 
 cluster = rados.Rados(conffile=CONFFILE, conf={"keyring": KEYFILE})
