@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
 import rados
-from os.path import expanduser
 import json
 import argparse
+import os, sys
 
 # init ceph
-CONFFILE = expanduser("./my_cluster/ceph.conf")
-KEYFILE = expanduser("./my_cluster/ceph.client.admin.keyring")
+CONFFILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "my_cluster/ceph.conf")
+KEYFILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "my_cluster/ceph.client.admin.keyring")
 POOL = "test"
 
 cluster = rados.Rados(conffile=CONFFILE, conf={"keyring": KEYFILE})
