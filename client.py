@@ -14,8 +14,11 @@ cluster = rados.Rados(conffile=CONFFILE, conf={"keyring": KEYFILE})
 cluster.connect()
 ioctx = cluster.open_ioctx(POOL)
 
+def init_pool():
+    os.system("sudo rados purge test --yes-i-really-really-mean-it > /dev/null")
+
 def get(name, ver = ""):
-    ret, out = ioctx.execute(name, 'objver', 'get', ver)
+    ret, out = ioctx.execute(name, 'objver', 'get', ver, length=2**16)
     if ret < 0:
         raise Exception
     return out
@@ -29,7 +32,11 @@ def lsver(name):
     ret, out = ioctx.execute(name, 'objver', 'lsver', "")
     if ret < 0:
         raise Exception
-    return out
+    return out.split()
+
+def ls():
+    # it = ioctx.list_objects()
+    return [x.key for x in ioctx.list_objects()]
 
 def main(args):
     if args.command == "get":
@@ -37,7 +44,11 @@ def main(args):
     elif args.command == "put":
         print(put(args.name, args.path)),
     elif args.command == "lsver":
-        print(lsver(args.name)),
+        for ver in lsver(args.name):
+            print ver
+    elif args.command == 'ls':
+        for obj in ls():
+            print(obj)
 
 if __name__ == "__main__":
     # arg parse
@@ -59,6 +70,9 @@ if __name__ == "__main__":
     # lsver
     parser_lsver = subparsers.add_parser('lsver', help='list versions')
     parser_lsver.add_argument('name')
+
+    # ls
+    parser_lsver = subparsers.add_parser('ls', help='list objects')
 
     args = parser.parse_args()
     if args.command:

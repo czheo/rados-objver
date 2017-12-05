@@ -21,3 +21,5 @@ ssh node-3 sudo chown -R ceph /var/local/osd2
 ceph-deploy osd activate node-1:/var/local/osd0
 ceph-deploy osd activate node-2:/var/local/osd1
 ceph-deploy osd activate node-3:/var/local/osd2
+
+ceph-deploy rgw create node-0

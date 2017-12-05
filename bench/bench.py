@@ -1,49 +1,89 @@
 #! /usr/bin/env python
 import os, sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+this_dir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(this_dir))
 
-import subprocess
-import client
+import client 
+# import raw_client as client
+# import rgw_client as client
+from Queue import Queue
+from threading import Thread
+from time import time, sleep
 
-def sh(s):
-    return subprocess.check_output(s, shell=True)
+def mean(lst):
+    return sum(lst) / max(len(lst), 1)
 
-def valid_name(file_name):
-    return "!" not in file_name and "@" not in file_name and os.path.isfile(file_name)
+op = sys.argv[1]
+q = Queue()
+print '# of threads\tthroughput\tlat avg\tmax\tmin'
+load_dir = sys.argv[2]
+NUM_OF_THREAD = int(sys.argv[3])
+num_of_thread = 0
+while num_of_thread < NUM_OF_THREAD:
+    if op == 'put':
+        sleep(1)
+        client.init_pool()
+        sleep(1)
+    
+    times = []
+    # consumer
+    if op == 'put':
+        def worker():
+            while True:
+                path, vers= q.get()
+                # real work
+                for ver in vers:
+                    f = os.path.join(path, ver)
+                    # print i, f
+                    start = time()
+                    client.put(path, f)
+                    duration = time() - start
+                    times.append(duration)
+                q.task_done()
+    elif op == 'get':
+        def worker():
+            while True:
+                obj = q.get()
+                # real work
+                start = time()
+                client.get(obj)
+                duration = time() - start
+                times.append(duration)
+                q.task_done()
+    elif op == 'getver':
+        def worker():
+            while True:
+                obj, ver = q.get()
+                # real work
+                start = time()
+                client.get(obj, ver=ver)
+                duration = time() - start
+                times.append(duration)
+                q.task_done()
 
-target_dir = sys.argv[1]
+    t = Thread(target=worker)
+    t.daemon = True
+    num_of_thread += 1
+    t.start()
 
-if not os.path.exists(target_dir):
-    exit("%s is not a dir" % target_dir)
+    start = time()
+    # producer
+    if op == 'put':
+        for path, subdirs, files in os.walk(load_dir):
+            if files:
+                q.put((path, sorted(files, key=int)))
+    elif op == 'get':
+        # for i in range(1):
+        for i in range(10):
+            for obj in client.ls():
+                q.put(obj)
+    elif op == 'getver':
+        # for obj, ver in client.lsver():
+        for obj in client.ls():
+            for ver in client.lsver(obj):
+                q.put((obj, ver))
 
-os.chdir(target_dir)
-print "change dir:", os.getcwd()
+    q.join()
+    total = time() - start
 
-# check out master
-sh("git checkout master")
-
-# get hash list
-hash_lst = sh("git log --reverse --pretty=format:%H").split()
-prev_hash = None
-
-count = 0
-for hash_val in hash_lst:
-    if not prev_hash:
-        # first commit
-        print "check out", hash_val
-        sh("git checkout %s" % hash_val)
-        files = sh("git ls-files").split()
-        for f in files:
-            if valid_name(f):
-                print "put", f
-                print client.put(f, f)
-    else:
-        print "check out", hash_val
-        sh("git checkout %s" % hash_val)
-        files = sh("git diff --name-only %s %s" % (prev_hash, hash_val)).split()
-        for f in files:
-            if valid_name(f):
-                print "put", f
-                print client.put(f, f)
-
-    prev_hash = hash_val
+    print '%d\t%f\t%f\t%f\t%f\t' % (num_of_thread, len(times) / total, mean(times), max(times), min(times))
